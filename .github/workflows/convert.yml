@@ -1,0 +1,61 @@
+name: Convert all images to JPG
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.png'
+      - '**/*.webp'
+      - '**/*.jpeg'
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pillow
+
+      - name: Convert images to JPG
+        run: |
+          python << 'EOF'
+          from PIL import Image
+          import os
+
+          root_dir = '.'
+
+          for subdir, _, files in os.walk(root_dir):
+              for file in files:
+                  path = os.path.join(subdir, file)
+                  name, ext = os.path.splitext(file)
+                  ext = ext.lower()
+                  if ext not in ['.jpg', '.jpeg', '.png', '.webp']:
+                      continue
+                  if ext in ['.jpg', '.jpeg']:
+                      continue
+                  try:
+                      img = Image.open(path).convert('RGB')
+                      new_path = os.path.join(subdir, f"{name}.jpg")
+                      img.save(new_path, 'JPEG', quality=85, optimize=True)
+                      os.remove(path)
+                      print(f"✅ Converted: {file} → {name}.jpg")
+                  except Exception as e:
+                      print(f"❌ Error: {file} ({e})")
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Auto convert images to JPG" || echo "No changes"
+          git push
