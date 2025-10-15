@@ -8,6 +8,9 @@ on:
       - '**/*.webp'
       - '**/*.jpeg'
 
+permissions:
+  contents: write   # 👈 Thêm dòng này để cho phép commit + push
+
 jobs:
   convert:
     runs-on: ubuntu-latest
@@ -15,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # 👈 Cho phép đẩy code
 
       - name: Setup Python
         uses: actions/setup-python@v5
